@@ -1,0 +1,50 @@
+name: Build Canon LBP-1120 x64 prototype
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Configure USB diagnostic
+        run: cmake -S . -B build-probe -A x64
+
+      - name: Build USB diagnostic
+        run: cmake --build build-probe --config Release
+
+      - name: Checkout libcapt
+        uses: actions/checkout@v4
+        with:
+          repository: darkvision77/libcapt
+          path: third_party/libcapt
+
+      - name: Configure libcapt
+        run: cmake -S third_party/libcapt -B build-libcapt -A x64
+
+      - name: Build libcapt
+        run: cmake --build build-libcapt --config Release
+
+      - name: Assemble artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item "build-probe/Release/lbp1120-usb-probe.exe" "dist/"
+          Copy-Item "README.md" "dist/"
+          Copy-Item "THIRD_PARTY.md" "dist/"
+          Compress-Archive -Path dist/* -DestinationPath LBP1120-Win64-prototype.zip -Force
+
+      - name: Upload Windows x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LBP1120-Win64-prototype
+          path: LBP1120-Win64-prototype.zip
+          if-no-files-found: error
+          retention-days: 14
