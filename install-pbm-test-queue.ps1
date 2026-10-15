@@ -7,10 +7,13 @@ $envName = 'Windows x64'
 $procName = 'CAPTPBM'
 $procDir = Join-Path $env:windir 'System32\spool\PRTPROCS\x64'
 $sourceDll = Join-Path $PSScriptRoot 'CAPTPBM.dll'
+$sourceExe = Join-Path $PSScriptRoot 'lbp1120-capt-print.exe'
 if (-not (Test-Path $sourceDll)) { throw "Missing $sourceDll" }
+if (-not (Test-Path $sourceExe)) { throw "Missing $sourceExe" }
 
 # The processor DLL must live in the spooler print-processor directory.
 Copy-Item $sourceDll (Join-Path $procDir 'CAPTPBM.dll') -Force
+Copy-Item $sourceExe (Join-Path $procDir 'lbp1120-capt-print.exe') -Force
 
 Add-Type -TypeDefinition @'
 using System;
