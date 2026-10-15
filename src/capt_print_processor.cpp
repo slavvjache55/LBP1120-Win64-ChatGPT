@@ -6,6 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <new>
 
 #pragma comment(lib, "winspool.lib")
 
@@ -19,6 +20,14 @@ struct Context {
     std::wstring datatype;
 };
 constexpr wchar_t kBuild[] = L"1";
+HMODULE g_module = nullptr;
+std::wstring ModulePath() {
+    std::wstring path(32768, L'\0');
+    DWORD n = GetModuleFileNameW(g_module, path.data(), static_cast<DWORD>(path.size()));
+    if (!n || n >= path.size()) return L"";
+    path.resize(n);
+    return path;
+}
 }
 
 extern "C" __declspec(dllexport)
@@ -127,9 +136,7 @@ BOOL WINAPI PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR, DWORD, DWORD, L
         }
     }
 
-    wchar_t modulePath[MAX_PATH]{};
-    GetModuleFileNameW(nullptr, modulePath, MAX_PATH);
-    std::wstring exePath(modulePath);
+    std::wstring exePath = ModulePath();
     const auto slash = exePath.find_last_of(L"\\/");
     if (slash == std::wstring::npos) {
         DeleteFileW(tempFile);
@@ -171,4 +178,9 @@ extern "C" __declspec(dllexport)
 BOOL WINAPI ControlPrintProcessor(HANDLE, DWORD) {
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
+}
+
+BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
+    if (reason == DLL_PROCESS_ATTACH) { g_module = instance; DisableThreadLibraryCalls(instance); }
+    return TRUE;
 }
