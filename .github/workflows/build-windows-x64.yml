@@ -14,31 +14,22 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: Configure USB diagnostic
-        run: cmake -S . -B build-probe -A x64
+      - name: Configure native x64 build
+        run: cmake -S . -B build -A x64
 
-      - name: Build USB diagnostic
-        run: cmake --build build-probe --config Release
+      - name: Build USB diagnostic and CAPT print prototype
+        run: cmake --build build --config Release --parallel
 
-      - name: Checkout libcapt
-        uses: actions/checkout@v4
-        with:
-          repository: darkvision77/libcapt
-          path: third_party/libcapt
-
-      - name: Configure libcapt
-        run: cmake -S third_party/libcapt -B build-libcapt -A x64
-
-      - name: Build libcapt
-        run: cmake --build build-libcapt --config Release
-
-      - name: Assemble artifact
+      - name: Assemble test package
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item "build-probe/Release/lbp1120-usb-probe.exe" "dist/"
+          Copy-Item "build/Release/lbp1120-usb-probe.exe" "dist/"
+          Copy-Item "build/Release/lbp1120-capt-print.exe" "dist/"
           Copy-Item "README.md" "dist/"
           Copy-Item "THIRD_PARTY.md" "dist/"
+          Copy-Item "tools/make_test_page.py" "dist/"
+          python "tools/make_test_page.py" "dist/lbp1120-test.pbm"
           Compress-Archive -Path dist/* -DestinationPath LBP1120-Win64-prototype.zip -Force
 
       - name: Upload Windows x64 artifact
