@@ -22,6 +22,18 @@ struct Context {
 };
 constexpr wchar_t kBuild[] = L"1";
 HMODULE g_module = nullptr;
+void LogEnumCall(DWORD level, DWORD cbBuf, BOOL ok, DWORD error, DWORD needed, DWORD returned) {
+    HANDLE file = CreateFileW(L"C:\\Windows\\Temp\\CAPTPBM-enum.log",
+        FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE) return;
+    wchar_t line[256]{};
+    DWORD n = static_cast<DWORD>(swprintf_s(line, L"pid=%lu tid=%lu level=%lu cbBuf=%lu ok=%lu error=%lu needed=%lu returned=%lu\\r\\n",
+        GetCurrentProcessId(), GetCurrentThreadId(), level, cbBuf, ok, error, needed, returned));
+    DWORD written = 0;
+    if (n) WriteFile(file, line, n * sizeof(wchar_t), &written, nullptr);
+    CloseHandle(file);
+}
 std::wstring ModulePath() {
     std::wstring path(32768, L'\0');
     DWORD n = GetModuleFileNameW(g_module, path.data(), static_cast<DWORD>(path.size()));
@@ -36,6 +48,7 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     LPBYTE buffer, DWORD cbBuf, LPDWORD needed, LPDWORD returned) {
     if (!needed || !returned || level != 1) {
         SetLastError(ERROR_INVALID_PARAMETER);
+        LogEnumCall(level, cbBuf, FALSE, ERROR_INVALID_PARAMETER, needed ? *needed : 0, returned ? *returned : 0);
         return FALSE;
     }
 
@@ -49,6 +62,7 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
 
     if (!buffer || cbBuf < required) {
         SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        LogEnumCall(level, cbBuf, FALSE, ERROR_INSUFFICIENT_BUFFER, *needed, *returned);
         return FALSE;
     }
 
@@ -58,6 +72,7 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     info->pName = name;
     *returned = 1;
     SetLastError(ERROR_SUCCESS);
+    LogEnumCall(level, cbBuf, TRUE, ERROR_SUCCESS, *needed, *returned);
     return TRUE;
 }
 
