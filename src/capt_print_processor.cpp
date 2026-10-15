@@ -52,25 +52,21 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
         return FALSE;
     }
 
-    // The caller owns the output buffer. Keep both DATATYPES_INFO_1W and
-    // its pName string inside that buffer, as required by the Win32 API.
-    constexpr wchar_t datatype[] = L"CAPTPBM";
-    constexpr DWORD required =
-        static_cast<DWORD>(sizeof(DATATYPES_INFO_1W) + sizeof(datatype));
+    constexpr wchar_t pbmType[] = L"CAPTPBM";
+    constexpr wchar_t rawType[] = L"RAW";
+    constexpr DWORD infoBytes = 2 * sizeof(DATATYPES_INFO_1W);
+    constexpr DWORD required = infoBytes + sizeof(pbmType) + sizeof(rawType);
     *needed = required;
     *returned = 0;
-
-    if (!buffer || cbBuf < required) {
-        SetLastError(ERROR_INSUFFICIENT_BUFFER);
-        LogEnumCall(level, cbBuf, FALSE, ERROR_INSUFFICIENT_BUFFER, *needed, *returned);
-        return FALSE;
-    }
-
+    if (!buffer || cbBuf < required) { SetLastError(ERROR_INSUFFICIENT_BUFFER); LogEnumCall(level, cbBuf, FALSE, ERROR_INSUFFICIENT_BUFFER, *needed, *returned); return FALSE; }
     auto* info = reinterpret_cast<DATATYPES_INFO_1W*>(buffer);
-    auto* name = reinterpret_cast<LPWSTR>(buffer + sizeof(DATATYPES_INFO_1W));
-    memcpy(name, datatype, sizeof(datatype));
-    info->pName = name;
-    *returned = 1;
+    auto* names = reinterpret_cast<LPWSTR>(buffer + infoBytes);
+    memcpy(names, pbmType, sizeof(pbmType));
+    info[0].pName = names;
+    names = reinterpret_cast<LPWSTR>(reinterpret_cast<BYTE*>(names) + sizeof(pbmType));
+    memcpy(names, rawType, sizeof(rawType));
+    info[1].pName = names;
+    *returned = 2;
     SetLastError(ERROR_SUCCESS);
     LogEnumCall(level, cbBuf, TRUE, ERROR_SUCCESS, *needed, *returned);
     return TRUE;
@@ -78,7 +74,7 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
 
 extern "C"
 DWORD WINAPI CAPTPBM_GetPrintProcessorCapabilities(LPWSTR datatype, DWORD, LPBYTE, DWORD cbBuf, LPDWORD needed) {
-    if (!needed || !datatype || lstrcmpiW(datatype, L"CAPTPBM") != 0) {
+    if (!needed || !datatype || (lstrcmpiW(datatype, L"CAPTPBM") != 0 && lstrcmpiW(datatype, L"RAW") != 0)) {
         if (needed) *needed = 0;
         return ERROR_INVALID_DATATYPE;
     }
@@ -92,7 +88,7 @@ DWORD WINAPI CAPTPBM_GetPrintProcessorCapabilities(LPWSTR datatype, DWORD, LPBYT
 extern "C"
 HANDLE WINAPI CAPTPBM_OpenPrintProcessor(LPWSTR printerName, PPRINTPROCESSOROPENDATA openData) {
     if (!printerName || !openData || !openData->pDatatype ||
-        lstrcmpiW(openData->pDatatype, L"CAPTPBM") != 0) {
+        (lstrcmpiW(openData->pDatatype, L"CAPTPBM") != 0 && lstrcmpiW(openData->pDatatype, L"RAW") != 0)) {
         SetLastError(ERROR_INVALID_DATATYPE);
         return nullptr;
     }
