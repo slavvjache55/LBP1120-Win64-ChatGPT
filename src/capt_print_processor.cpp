@@ -22,8 +22,9 @@ struct Context {
 };
 constexpr wchar_t kBuild[] = L"1";
 HMODULE g_module = nullptr;
+const wchar_t* g_enumLogPath = L"C:\\Windows\\Temp\\CAPTPBM-enum.log";
 void LogEnumCall(DWORD level, DWORD cbBuf, BOOL ok, DWORD error, DWORD needed, DWORD returned) {
-    HANDLE file = CreateFileW(L"C:\\Windows\\Temp\\CAPTPBM-enum.log",
+    HANDLE file = CreateFileW(g_enumLogPath,
         FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE) return;
@@ -43,8 +44,7 @@ std::wstring ModulePath() {
 }
 }
 
-extern "C"
-BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
+static BOOL WINAPI EnumPrintProcessorDatatypesImpl(LPWSTR, LPWSTR, DWORD level,
     LPBYTE buffer, DWORD cbBuf, LPDWORD needed, LPDWORD returned) {
     if (!needed || !returned || level != 1) {
         SetLastError(ERROR_INVALID_PARAMETER);
@@ -74,6 +74,21 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     SetLastError(ERROR_SUCCESS);
     LogEnumCall(level, cbBuf, TRUE, ERROR_SUCCESS, *needed, *returned);
     return TRUE;
+}
+
+
+extern "C"
+BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR serverName, LPWSTR processorName,
+    DWORD level, LPBYTE buffer, DWORD cbBuf, LPDWORD needed, LPDWORD returned) {
+    g_enumLogPath = L"C:\\Windows\\Temp\\CAPTPBM-enum-legacy.log";
+    return EnumPrintProcessorDatatypesImpl(serverName, processorName, level, buffer, cbBuf, needed, returned);
+}
+
+extern "C"
+BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypesW(LPWSTR serverName, LPWSTR processorName,
+    DWORD level, LPBYTE buffer, DWORD cbBuf, LPDWORD needed, LPDWORD returned) {
+    g_enumLogPath = L"C:\\Windows\\Temp\\CAPTPBM-enum-wide.log";
+    return EnumPrintProcessorDatatypesImpl(serverName, processorName, level, buffer, cbBuf, needed, returned);
 }
 
 extern "C"
