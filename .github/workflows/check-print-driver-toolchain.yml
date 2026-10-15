@@ -38,7 +38,7 @@ jobs:
           }
           $report.Add("")
           $report.Add("== Windows Kits ==")
-          foreach ($root in @("$env:ProgramFiles(x86)\Windows Kits\10", "$env:ProgramFiles\Windows Kits\10")) {
+          foreach ($root in @("${env:ProgramFiles(x86)}\Windows Kits\10", "$env:ProgramFiles\Windows Kits\10")) {
             $report.Add("Root: $root; exists=$(Test-Path $root)")
             if (Test-Path $root) {
               Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
@@ -47,7 +47,7 @@ jobs:
           }
           $report.Add("")
           $report.Add("== WDK indicators ==")
-          $roots = @("$env:ProgramFiles(x86)\Windows Kits\10", "$env:ProgramFiles\Windows Kits\10")
+          $roots = @("${env:ProgramFiles(x86)}\Windows Kits\10", "$env:ProgramFiles\Windows Kits\10")
           $found = @()
           foreach ($root in $roots) {
             if (Test-Path $root) {
