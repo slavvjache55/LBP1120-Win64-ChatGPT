@@ -128,25 +128,20 @@ BOOL WINAPI CAPTPBM_PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR document
         SetLastError(ERROR_INVALID_HANDLE);
         return FALSE;
     }
-    // The spooler passes the spool-file path here. Only our explicit CAPTPBM
-    // datatype is accepted; no arbitrary EMF/XPS rendering is claimed.
-    std::ifstream in(documentName, std::ios::binary);
-    char magic[2]{};
-    in.read(magic, 2);
-    if (!in || magic[0] != 'P' || magic[1] != '4') {
-        SetLastError(ERROR_INVALID_DATA);
-        return FALSE;
-    }
-
+    // CAPTPBM accepts PBM P4; RAW accepts plain text from Generic / Text Only.
+    // Other formats (including XPS/EMF) are not supported by this prototype.
     std::wstring exePath = ModulePath();
     const auto slash = exePath.find_last_of(L"\\/");
-    if (slash == std::wstring::npos) {
-        SetLastError(ERROR_PATH_NOT_FOUND);
-        return FALSE;
-    }
+    if (slash == std::wstring::npos) { SetLastError(ERROR_PATH_NOT_FOUND); return FALSE; }
     exePath.resize(slash + 1);
-    exePath += L"lbp1120-capt-print.exe";
-
+    if (lstrcmpiW(ctx->datatype.c_str(), L"RAW") == 0) {
+        exePath += L"lbp1120-text-print.exe";
+    } else {
+        std::ifstream in(documentName, std::ios::binary);
+        char magic[2]{}; in.read(magic, 2);
+        if (!in || magic[0] != 'P' || magic[1] != '4') { SetLastError(ERROR_INVALID_DATA); return FALSE; }
+        exePath += L"lbp1120-capt-print.exe";
+    }
     std::wstring command = L"\"" + exePath + L"\" \"" + documentName + L"\"";
     STARTUPINFOW si{};
     si.cb = sizeof(si);
