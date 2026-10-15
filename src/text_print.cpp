@@ -69,15 +69,14 @@ bool RenderTextToPbm(const std::wstring& inputPath, const std::wstring& outputPa
     int x = left, y = top;
     std::wstring line;
     auto drawLine = [&]() {
-        if (y + lineHeight >= kHeight - 250) { y = top; x += 1500; }
-        if (x + 1300 >= kWidth - 200) { x = left; y = kHeight; }
+        if (y + lineHeight >= kHeight - 250) { y = kHeight; line.clear(); return; }
         if (y < kHeight - 250) TextOutW(dc, x, y, line.c_str(), static_cast<int>(line.size()));
         y += lineHeight;
         line.clear();
     };
     for (wchar_t ch : text) {
         if (ch == L'\r') continue;
-        if (ch == L'\f') { drawLine(); y = kHeight; continue; }
+        if (ch == L'\f') break;
         if (ch == L'\n') { drawLine(); continue; }
         if (ch == L'\t') {
             const size_t spaces = 4 - (line.size() % 4);
