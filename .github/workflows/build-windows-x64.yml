@@ -23,21 +23,8 @@ jobs:
       - name: Verify print processor exports
         shell: pwsh
         run: |
-          $exports = & dumpbin /nologo /exports "build/Release/CAPTPBM.dll"
-          if ($LASTEXITCODE -ne 0) { throw "dumpbin failed to inspect CAPTPBM.dll" }
-          $exports | ForEach-Object { Write-Host $_ }
-          $required = @(
-            "EnumPrintProcessorDatatypes",
-            "OpenPrintProcessor",
-            "PrintDocumentOnPrintProcessor",
-            "ClosePrintProcessor",
-            "ControlPrintProcessor"
-          )
-          foreach ($name in $required) {
-            if (-not ($exports | Select-String -Pattern ("\\b" + [regex]::Escape($name) + "\\b"))) {
-              throw "Missing required export: $name"
-            }
-          }
+          python -m pip install --disable-pip-version-check pefile
+          python tools/check_exports.py build/Release/CAPTPBM.dll
 
       - name: Assemble test package
         shell: pwsh
