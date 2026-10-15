@@ -62,6 +62,19 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
 }
 
 extern "C"
+DWORD WINAPI CAPTPBM_GetPrintProcessorCapabilities(LPWSTR datatype, DWORD, LPBYTE, DWORD cbBuf, LPDWORD needed) {
+    if (!needed || !datatype || lstrcmpiW(datatype, L"CAPTPBM") != 0) {
+        if (needed) *needed = 0;
+        return ERROR_INVALID_DATATYPE;
+    }
+    // The prototype advertises no optional capabilities, but exports the
+    // documented entry point so the spooler can resolve it by name.
+    *needed = 0;
+    (void)cbBuf;
+    return ERROR_NOT_SUPPORTED;
+}
+
+extern "C"
 HANDLE WINAPI CAPTPBM_OpenPrintProcessor(LPWSTR printerName, PPRINTPROCESSOROPENDATA openData) {
     if (!printerName || !openData || !openData->pDatatype ||
         lstrcmpiW(openData->pDatatype, L"CAPTPBM") != 0) {
