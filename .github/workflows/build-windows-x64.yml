@@ -27,6 +27,8 @@ jobs:
           Copy-Item "build/Release/lbp1120-usb-probe.exe" "dist/"
           Copy-Item "build/Release/lbp1120-capt-print.exe" "dist/"
           Copy-Item "build/Release/CAPTPBM.dll" "dist/"
+          Copy-Item "build/Release/lbp1120-submit-pbm.exe" "dist/"
+          Copy-Item "install-pbm-test-queue.ps1" "dist/"
           Copy-Item "README.md" "dist/"
           Copy-Item "THIRD_PARTY.md" "dist/"
           Copy-Item "tools/make_test_page.py" "dist/"
