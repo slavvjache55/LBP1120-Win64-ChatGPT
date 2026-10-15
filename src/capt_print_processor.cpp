@@ -24,16 +24,22 @@ constexpr wchar_t kBuild[] = L"1";
 HMODULE g_module = nullptr;
 const wchar_t* g_enumLogPath = L"C:\\Windows\\Temp\\CAPTPBM-enum.log";
 void LogEnumCall(DWORD level, DWORD cbBuf, BOOL ok, DWORD error, DWORD needed, DWORD returned) {
+    // Logging must not overwrite the Win32 last-error value returned to the spooler.
+    // CreateFileW(OPEN_ALWAYS) can set ERROR_ALREADY_EXISTS (183), masking the
+    // intended ERROR_INSUFFICIENT_BUFFER (122) and preventing the spooler retry.
+    const DWORD savedLastError = GetLastError();
     HANDLE file = CreateFileW(g_enumLogPath,
         FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-    if (file == INVALID_HANDLE_VALUE) return;
-    wchar_t line[256]{};
-    DWORD n = static_cast<DWORD>(swprintf_s(line, L"pid=%lu tid=%lu level=%lu cbBuf=%lu ok=%lu error=%lu needed=%lu returned=%lu\\r\\n",
-        GetCurrentProcessId(), GetCurrentThreadId(), level, cbBuf, ok, error, needed, returned));
-    DWORD written = 0;
-    if (n) WriteFile(file, line, n * sizeof(wchar_t), &written, nullptr);
-    CloseHandle(file);
+    if (file != INVALID_HANDLE_VALUE) {
+        wchar_t line[256]{};
+        DWORD n = static_cast<DWORD>(swprintf_s(line, L"pid=%lu tid=%lu level=%lu cbBuf=%lu ok=%lu error=%lu needed=%lu returned=%lu\\r\\n",
+            GetCurrentProcessId(), GetCurrentThreadId(), level, cbBuf, ok, error, needed, returned));
+        DWORD written = 0;
+        if (n) WriteFile(file, line, n * sizeof(wchar_t), &written, nullptr);
+        CloseHandle(file);
+    }
+    SetLastError(savedLastError);
 }
 std::wstring ModulePath() {
     std::wstring path(32768, L'\0');
