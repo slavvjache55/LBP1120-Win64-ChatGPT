@@ -1,0 +1,69 @@
+name: Check Windows print-driver toolchain
+
+on:
+  push:
+    branches:
+      - feature/verify-windows-driver-toolchain
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-toolchain:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Inspect installed Windows driver build components
+        shell: pwsh
+        run: |
+          $report = New-Object System.Collections.Generic.List[string]
+          $report.Add("Windows print-driver toolchain inspection")
+          $report.Add("Runner OS: $([System.Runtime.InteropServices.RuntimeInformation]::OSDescription)")
+          $report.Add("Architecture: $([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)")
+          $report.Add("")
+          $report.Add("== Visual Studio / MSBuild ==")
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            $vs = & $vswhere -latest -products '*' -property installationPath
+            $report.Add("Visual Studio: $vs")
+            if ($vs) {
+              $msbuild = Join-Path $vs "MSBuild\Current\Bin\MSBuild.exe"
+              $report.Add("MSBuild exists: $(Test-Path $msbuild)")
+            }
+          } else {
+            $report.Add("vswhere not found")
+          }
+          $report.Add("")
+          $report.Add("== Windows Kits ==")
+          foreach ($root in @("$env:ProgramFiles(x86)\Windows Kits\10", "$env:ProgramFiles\Windows Kits\10")) {
+            $report.Add("Root: $root; exists=$(Test-Path $root)")
+            if (Test-Path $root) {
+              Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
+                ForEach-Object { $report.Add("  " + $_.FullName) }
+            }
+          }
+          $report.Add("")
+          $report.Add("== WDK indicators ==")
+          $roots = @("$env:ProgramFiles(x86)\Windows Kits\10", "$env:ProgramFiles\Windows Kits\10")
+          $found = @()
+          foreach ($root in $roots) {
+            if (Test-Path $root) {
+              $found += Get-ChildItem $root -Recurse -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -match 'PrintDriver|PrintConfig|XpsDrv|DrvPkg|WindowsDriverKit' } |
+                Select-Object -First 100 -ExpandProperty FullName
+            }
+          }
+          if ($found.Count) { $report.AddRange([string[]]$found) } else { $report.Add("No matching WDK/print-driver files found in standard Windows Kits roots.") }
+          $report | Tee-Object -FilePath toolchain-report.txt
+          Get-Content toolchain-report.txt
+
+      - name: Upload inspection report
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-print-driver-toolchain-report
+          path: toolchain-report.txt
+          if-no-files-found: error
+          retention-days: 14
