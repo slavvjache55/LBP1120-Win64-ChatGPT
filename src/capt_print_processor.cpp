@@ -38,15 +38,26 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
+
+    // The caller owns the output buffer. Keep both DATATYPES_INFO_1W and
+    // its pName string inside that buffer, as required by the Win32 API.
+    constexpr wchar_t datatype[] = L"CAPTPBM";
+    constexpr DWORD required =
+        static_cast<DWORD>(sizeof(DATATYPES_INFO_1W) + sizeof(datatype));
+    *needed = required;
     *returned = 0;
-    *needed = sizeof(DATATYPES_INFO_1W);
-    if (!buffer || cbBuf < *needed) {
+
+    if (!buffer || cbBuf < required) {
         SetLastError(ERROR_INSUFFICIENT_BUFFER);
         return FALSE;
     }
+
     auto* info = reinterpret_cast<DATATYPES_INFO_1W*>(buffer);
-    info->pName = const_cast<LPWSTR>(L"CAPTPBM");
+    auto* name = reinterpret_cast<LPWSTR>(buffer + sizeof(DATATYPES_INFO_1W));
+    memcpy(name, datatype, sizeof(datatype));
+    info->pName = name;
     *returned = 1;
+    SetLastError(ERROR_SUCCESS);
     return TRUE;
 }
 
