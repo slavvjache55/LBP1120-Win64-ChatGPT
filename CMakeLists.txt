@@ -34,6 +34,11 @@ target_compile_definitions(CAPTPBM PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN 
 target_link_libraries(CAPTPBM PRIVATE winspool)
 set_target_properties(CAPTPBM PROPERTIES PREFIX "" OUTPUT_NAME "CAPTPBM")
 
+# Keep the print processor self-contained in the spooler loading context.
+if(MSVC)
+  set_property(TARGET CAPTPBM PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 add_executable(lbp1120-capt-print src/capt_print.cpp)
 target_compile_features(lbp1120-capt-print PRIVATE cxx_std_23)
 target_compile_definitions(lbp1120-capt-print PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
