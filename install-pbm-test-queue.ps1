@@ -11,9 +11,27 @@ $sourceExe = Join-Path $PSScriptRoot 'lbp1120-capt-print.exe'
 if (-not (Test-Path $sourceDll)) { throw "Missing $sourceDll" }
 if (-not (Test-Path $sourceExe)) { throw "Missing $sourceExe" }
 
-# The processor DLL must live in the spooler print-processor directory.
-Copy-Item $sourceDll (Join-Path $procDir 'CAPTPBM.dll') -Force
-Copy-Item $sourceExe (Join-Path $procDir 'lbp1120-capt-print.exe') -Force
+# Replacing a DLL already loaded by the spooler fails with "file in use".
+# Confirm there are no active print jobs before briefly restarting the spooler.
+Write-Host "This installer briefly restarts the Windows Print Spooler."
+$answer = Read-Host "Confirm there are no active print jobs. Continue? (Y/N)"
+if ($answer -notin @('Y','y')) { throw "Cancelled; no files were changed." }
+
+$spoolerWasRunning = (Get-Service Spooler).Status -eq 'Running'
+try {
+  if ($spoolerWasRunning) {
+    Stop-Service Spooler -Force
+    (Get-Service Spooler).WaitForStatus('Stopped', [TimeSpan]::FromSeconds(30))
+  }
+  Copy-Item $sourceDll (Join-Path $procDir 'CAPTPBM.dll') -Force
+  Copy-Item $sourceExe (Join-Path $procDir 'lbp1120-capt-print.exe') -Force
+}
+finally {
+  if ($spoolerWasRunning) {
+    Start-Service Spooler
+    (Get-Service Spooler).WaitForStatus('Running', [TimeSpan]::FromSeconds(30))
+  }
+}
 
 Add-Type -TypeDefinition @'
 using System;
