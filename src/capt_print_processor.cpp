@@ -30,8 +30,8 @@ std::wstring ModulePath() {
 }
 }
 
-extern "C" __declspec(dllexport)
-BOOL WINAPI EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
+extern "C"
+BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     LPBYTE buffer, DWORD cbBuf, LPDWORD needed, LPDWORD returned) {
     if (!needed || !returned || level != 1) {
         SetLastError(ERROR_INVALID_PARAMETER);
@@ -49,8 +49,10 @@ BOOL WINAPI EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     return TRUE;
 }
 
-extern "C" __declspec(dllexport)
-HANDLE WINAPI OpenPrintProcessor(LPWSTR printerName, PPRINTPROCESSOROPENDATA openData) {
+struct CAPT_OPEN_DATA { LPWSTR pPrinterName; LPWSTR pDatatype; LPWSTR pParameters; PDEVMODE pDevMode; DWORD JobId; };
+
+extern "C"
+HANDLE WINAPI CAPTPBM_OpenPrintProcessor(LPWSTR printerName, CAPT_OPEN_DATA* openData) {
     if (!printerName || !openData || !openData->pDatatype ||
         lstrcmpiW(openData->pDatatype, L"CAPTPBM") != 0) {
         SetLastError(ERROR_INVALID_DATATYPE);
@@ -66,8 +68,8 @@ HANDLE WINAPI OpenPrintProcessor(LPWSTR printerName, PPRINTPROCESSOROPENDATA ope
     return ctx;
 }
 
-extern "C" __declspec(dllexport)
-BOOL WINAPI PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR, DWORD, DWORD, LPBYTE) {
+extern "C"
+BOOL WINAPI CAPTPBM_PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR, DWORD, DWORD, LPBYTE) {
     auto* ctx = reinterpret_cast<Context*>(handle);
     if (!ctx) {
         SetLastError(ERROR_INVALID_HANDLE);
@@ -168,14 +170,14 @@ BOOL WINAPI PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR, DWORD, DWORD, L
     return TRUE;
 }
 
-extern "C" __declspec(dllexport)
-BOOL WINAPI ClosePrintProcessor(HANDLE handle) {
+extern "C"
+BOOL WINAPI CAPTPBM_ClosePrintProcessor(HANDLE handle) {
     delete reinterpret_cast<Context*>(handle);
     return TRUE;
 }
 
-extern "C" __declspec(dllexport)
-BOOL WINAPI ControlPrintProcessor(HANDLE, DWORD) {
+extern "C"
+BOOL WINAPI CAPTPBM_ControlPrintProcessor(HANDLE, DWORD) {
     SetLastError(ERROR_NOT_SUPPORTED);
     return FALSE;
 }
