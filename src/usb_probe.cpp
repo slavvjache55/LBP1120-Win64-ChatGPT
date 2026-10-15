@@ -7,7 +7,7 @@
 #include <cwctype>
 #include <cwchar>
 
-static constexpr const wchar_t* BUILD_ID = L"4";
+static constexpr const wchar_t* BUILD_ID = L"5";
 
 static std::wstring ReadStringProperty(HDEVINFO set, SP_DEVINFO_DATA& data, DWORD property) {
     DWORD type = 0, required = 0;
@@ -36,13 +36,13 @@ static std::wstring ReadHardwareIds(HDEVINFO set, SP_DEVINFO_DATA& data) {
 
 int wmain() {
     constexpr const wchar_t* target = L"VID_04A9&PID_262B";
-    std::wcout << L"Canon LBP-1120 USB/PnP diagnostic (read-only)\\n";
-    std::wcout << L"BUILD #" << BUILD_ID << L"\\n";
-    std::wcout << L"Looking for " << target << L"\\n\\n" << std::flush;
+    std::wcout << L"Canon LBP-1120 USB/PnP diagnostic (read-only)\n";
+    std::wcout << L"BUILD #" << BUILD_ID << L"\n";
+    std::wcout << L"Looking for " << target << L"\n\n" << std::flush;
 
     HDEVINFO set = SetupDiGetClassDevsW(nullptr, nullptr, nullptr, DIGCF_ALLCLASSES | DIGCF_PRESENT);
     if (set == INVALID_HANDLE_VALUE) {
-        std::wcerr << L"SetupDiGetClassDevs failed: " << GetLastError() << L"\\n";
+        std::wcerr << L"SetupDiGetClassDevs failed: " << GetLastError() << L"\n";
         return 2;
     }
 
@@ -53,7 +53,7 @@ int wmain() {
         if (!SetupDiEnumDeviceInfo(set, i, &data)) {
             DWORD err = GetLastError();
             if (err == ERROR_NO_MORE_ITEMS) break;
-            std::wcerr << L"SetupDiEnumDeviceInfo index " << i << L" failed: " << err << L"\\n";
+            std::wcerr << L"SetupDiEnumDeviceInfo index " << i << L" failed: " << err << L"\n";
             continue;
         }
 
@@ -71,22 +71,24 @@ int wmain() {
 
         // Print and flush the build marker BEFORE reading optional name properties.
         std::wcout << L"[" << count << L"] " << (isTarget ? L"TARGET" : L"Canon")
-                   << L" (BUILD #" << BUILD_ID << L")\\n" << std::flush;
+                   << L" (BUILD #" << BUILD_ID << L")\n" << std::flush;
 
-        std::wstring desc = ReadStringProperty(set, data, SPDRP_DEVICEDESC);
-        std::wstring friendly = ReadStringProperty(set, data, SPDRP_FRIENDLYNAME);
-        std::wstring label = friendly.empty() ? desc : friendly;
-        std::wcout << L"    Name: " << (label.empty() ? L"(device name unavailable)" : label) << L"\\n";
-        std::wcout << L"    Hardware IDs: " << (ids.empty() ? L"(not exposed)" : ids) << L"\\n"
-                   << std::flush;
+        // Do not print device names: console encoding can fail on some systems.
+        // Print USB IDs as ASCII-safe characters to isolate the failure.
+        std::cout << "    Hardware IDs (ASCII): ";
+        for (wchar_t ch : ids) {
+            if (ch >= 32 && ch <= 126) std::cout << static_cast<char>(ch);
+            else std::cout << '?';
+        }
+        std::cout << "\n" << std::flush;
     }
     SetupDiDestroyDeviceInfoList(set);
-    std::wcout << L"\\nSummary: exact VID/PID matches=" << exact
-               << L", Canon VID matches=" << canon << L"\\n";
+    std::wcout << L"\nSummary: exact VID/PID matches=" << exact
+               << L", Canon VID matches=" << canon << L"\n";
     if (!exact) {
-        std::wcout << L"No exact match found. Check Device Manager and USB cable/power.\\n";
+        std::wcout << L"No exact match found. Check Device Manager and USB cable/power.\n";
         return 1;
     }
-    std::wcout << L"Device is present in Windows PnP. This is not a print test.\\n";
+    std::wcout << L"Device is present in Windows PnP. This is not a print test.\n";
     return 0;
 }
