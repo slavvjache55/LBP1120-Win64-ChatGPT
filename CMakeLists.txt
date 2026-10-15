@@ -28,7 +28,7 @@ target_compile_features(lbp1120-submit-pbm PRIVATE cxx_std_17)
 target_compile_definitions(lbp1120-submit-pbm PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(lbp1120-submit-pbm PRIVATE winspool)
 
-add_library(CAPTPBM SHARED src/capt_print_processor.cpp)
+add_library(CAPTPBM SHARED src/capt_print_processor.cpp src/CAPTPBM.def)
 target_compile_features(CAPTPBM PRIVATE cxx_std_17)
 target_compile_definitions(CAPTPBM PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
 target_link_libraries(CAPTPBM PRIVATE winspool)
