@@ -183,4 +183,47 @@ BOOL WINAPI ControlPrintProcessor(HANDLE, DWORD) {
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) { g_module = instance; DisableThreadLibraryCalls(instance); }
     return TRUE;
+}extern "C"
+BOOL WINAPI CAPTPBM_PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR documentName) {
+    auto* ctx = reinterpret_cast<Context*>(handle);
+    if (!ctx || !documentName) {
+        SetLastError(ERROR_INVALID_HANDLE);
+        return FALSE;
+    }
+    // The spooler passes the spool-file path here. Only our explicit CAPTPBM
+    // datatype is accepted; no arbitrary EMF/XPS rendering is claimed.
+    std::ifstream in(documentName, std::ios::binary);
+    char magic[2]{};
+    in.read(magic, 2);
+    if (!in || magic[0] != 'P' || magic[1] != '4') {
+        SetLastError(ERROR_INVALID_DATA);
+        return FALSE;
+    }
+
+    std::wstring exePath = ModulePath();
+    const auto slash = exePath.find_last_of(L"\\/");
+    if (slash == std::wstring::npos) {
+        SetLastError(ERROR_PATH_NOT_FOUND);
+        return FALSE;
+    }
+    exePath.resize(slash + 1);
+    exePath += L"lbp1120-capt-print.exe";
+
+    std::wstring command = L"\"" + exePath + L"\" \"" + documentName + L"\"";
+    STARTUPINFOW si{};
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi{};
+    if (!CreateProcessW(exePath.c_str(), command.data(), nullptr, nullptr, FALSE,
+            CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) return FALSE;
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD exitCode = 1;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    if (exitCode != 0) {
+        SetLastError(ERROR_PRINT_CANCELLED);
+        return FALSE;
+    }
+    return TRUE;
 }
+
