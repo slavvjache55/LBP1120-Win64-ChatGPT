@@ -1,0 +1,7 @@
+LIBRARY CAPTPBM
+EXPORTS
+  EnumPrintProcessorDatatypesW=CAPTPBM_EnumPrintProcessorDatatypes
+  OpenPrintProcessorW=CAPTPBM_OpenPrintProcessor
+  PrintDocumentOnPrintProcessorW=CAPTPBM_PrintDocumentOnPrintProcessor
+  ClosePrintProcessor=CAPTPBM_ClosePrintProcessor
+  ControlPrintProcessor=CAPTPBM_ControlPrintProcessor
