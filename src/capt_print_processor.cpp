@@ -2,6 +2,7 @@
 #define NOMINMAX
 #include <windows.h>
 #include <winspool.h>
+#include <winsplp.h>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -49,10 +50,8 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     return TRUE;
 }
 
-struct CAPT_OPEN_DATA { LPWSTR pPrinterName; LPWSTR pDatatype; LPWSTR pParameters; PDEVMODE pDevMode; DWORD JobId; };
-
 extern "C"
-HANDLE WINAPI CAPTPBM_OpenPrintProcessor(LPWSTR printerName, CAPT_OPEN_DATA* openData) {
+HANDLE WINAPI CAPTPBM_OpenPrintProcessor(LPWSTR printerName, PPRINTPROCESSOROPENDATA openData) {
     if (!printerName || !openData || !openData->pDatatype ||
         lstrcmpiW(openData->pDatatype, L"CAPTPBM") != 0) {
         SetLastError(ERROR_INVALID_DATATYPE);
@@ -63,7 +62,7 @@ HANDLE WINAPI CAPTPBM_OpenPrintProcessor(LPWSTR printerName, CAPT_OPEN_DATA* ope
         SetLastError(ERROR_NOT_ENOUGH_MEMORY);
         return nullptr;
     }
-    ctx->printerName = printerName;
+    ctx->printerName = openData->pPrinterName ? openData->pPrinterName : printerName;
     ctx->datatype = openData->pDatatype;
     return ctx;
 }
