@@ -5,3 +5,4 @@ EXPORTS
   PrintDocumentOnPrintProcessor=CAPTPBM_PrintDocumentOnPrintProcessor
   ClosePrintProcessor=CAPTPBM_ClosePrintProcessor
   ControlPrintProcessor=CAPTPBM_ControlPrintProcessor
+  GetPrintProcessorCapabilities=CAPTPBM_GetPrintProcessorCapabilities
