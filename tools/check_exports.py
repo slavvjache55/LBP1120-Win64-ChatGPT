@@ -9,6 +9,7 @@ required = {
     "PrintDocumentOnPrintProcessor",
     "ClosePrintProcessor",
     "ControlPrintProcessor",
+    "GetPrintProcessorCapabilities",
 }
 pe = pefile.PE(str(dll), fast_load=True)
 pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]])
