@@ -31,7 +31,7 @@
 
 namespace {
 constexpr wchar_t kTargetVidPid[] = L"VID_04A9&PID_262B";
-constexpr wchar_t kBuildId[] = L"1";
+constexpr char kBuildId[] = "1";
 
 const GUID kUsbPrintInterfaceGuid =
     {0x28d78fad, 0x5a12, 0x11d1, {0xae, 0x5b, 0x00, 0x00, 0xf8, 0x03, 0xa8, 0xc2}};
