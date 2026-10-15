@@ -20,6 +20,25 @@ jobs:
       - name: Build USB diagnostic and CAPT print prototype
         run: cmake --build build --config Release --parallel
 
+      - name: Verify print processor exports
+        shell: pwsh
+        run: |
+          $exports = & dumpbin /nologo /exports "build/Release/CAPTPBM.dll"
+          if ($LASTEXITCODE -ne 0) { throw "dumpbin failed to inspect CAPTPBM.dll" }
+          $exports | ForEach-Object { Write-Host $_ }
+          $required = @(
+            "EnumPrintProcessorDatatypes",
+            "OpenPrintProcessor",
+            "PrintDocumentOnPrintProcessor",
+            "ClosePrintProcessor",
+            "ControlPrintProcessor"
+          )
+          foreach ($name in $required) {
+            if (-not ($exports | Select-String -Pattern ("\\b" + [regex]::Escape($name) + "\\b"))) {
+              throw "Missing required export: $name"
+            }
+          }
+
       - name: Assemble test package
         shell: pwsh
         run: |
