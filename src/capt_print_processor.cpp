@@ -36,7 +36,7 @@ void LogEnumCall(DWORD level, DWORD cbBuf, BOOL ok, DWORD error, DWORD needed, D
     CloseHandle(file);
 }
 std::wstring ModulePath() {
-    std::wstring path(32768, L'\\0');
+    std::wstring path(32768, L'\0');
     DWORD n = GetModuleFileNameW(g_module, path.data(), static_cast<DWORD>(path.size()));
     if (!n || n >= path.size()) return L"";
     path.resize(n);
