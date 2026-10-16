@@ -1,6 +1,6 @@
 LIBRARY CAPTTEST
 EXPORTS
-  EnumPrintProcessorDatatypes=CAPTTEST_EnumPrintProcessorDatatypes
+  EnumPrintProcessorDatatypesW=CAPTTEST_EnumPrintProcessorDatatypes
   OpenPrintProcessor=CAPTTEST_OpenPrintProcessor
   PrintDocumentOnPrintProcessor=CAPTTEST_PrintDocumentOnPrintProcessor
   ClosePrintProcessor=CAPTTEST_ClosePrintProcessor
