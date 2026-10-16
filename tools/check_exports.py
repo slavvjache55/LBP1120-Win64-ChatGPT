@@ -4,7 +4,7 @@ import pefile
 
 dll = Path(sys.argv[1])
 required = {
-    "EnumPrintProcessorDatatypesW",
+    "EnumPrintProcessorDatatypes",
     "OpenPrintProcessor",
     "PrintDocumentOnPrintProcessor",
     "ClosePrintProcessor",
