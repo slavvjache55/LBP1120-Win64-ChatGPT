@@ -25,6 +25,7 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check pefile
           python tools/check_exports.py build/Release/CAPTPBM.dll
+          python tools/check_exports.py build/Release/CAPTTEST.dll
 
       - name: Assemble test package
         shell: pwsh
@@ -34,6 +35,8 @@ jobs:
           Copy-Item "build/Release/lbp1120-capt-print.exe" "dist/"
           Copy-Item "build/Release/lbp1120-text-print.exe" "dist/"
           Copy-Item "build/Release/CAPTPBM.dll" "dist/"
+          Copy-Item "build/Release/CAPTTEST.dll" "dist/"
+          Copy-Item "tools/test-minimal-print-processor.ps1" "dist/"
           Copy-Item "build/Release/lbp1120-submit-pbm.exe" "dist/"
           Copy-Item "install-pbm-test-queue.ps1" "dist/"
           if (Test-Path "install-text-test-queue.ps1") { Copy-Item "install-text-test-queue.ps1" "dist/" }
