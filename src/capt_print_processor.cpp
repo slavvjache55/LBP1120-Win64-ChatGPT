@@ -20,7 +20,6 @@ struct Context {
     std::wstring printerName;
     std::wstring datatype;
 };
-constexpr wchar_t kBuild[] = L"1";
 HMODULE g_module = nullptr;
 void LogEnumCall(DWORD level, DWORD cbBuf, BOOL ok, DWORD error, DWORD needed, DWORD returned) {
     HANDLE file = CreateFileW(L"C:\\Windows\\Temp\\CAPTPBM-enum.log",
@@ -28,14 +27,16 @@ void LogEnumCall(DWORD level, DWORD cbBuf, BOOL ok, DWORD error, DWORD needed, D
         nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE) return;
     wchar_t line[256]{};
-    DWORD n = static_cast<DWORD>(swprintf_s(line, L"pid=%lu tid=%lu level=%lu cbBuf=%lu ok=%lu error=%lu needed=%lu returned=%lu\\r\\n",
-        GetCurrentProcessId(), GetCurrentThreadId(), level, cbBuf, ok, error, needed, returned));
-    DWORD written = 0;
-    if (n) WriteFile(file, line, n * sizeof(wchar_t), &written, nullptr);
+    int chars = swprintf_s(line, L"pid=%lu tid=%lu level=%lu cbBuf=%lu ok=%lu error=%lu needed=%lu returned=%lu\r\n",
+        GetCurrentProcessId(), GetCurrentThreadId(), level, cbBuf, ok, error, needed, returned);
+    if (chars > 0) {
+        DWORD written = 0;
+        WriteFile(file, line, static_cast<DWORD>(chars) * sizeof(wchar_t), &written, nullptr);
+    }
     CloseHandle(file);
 }
 std::wstring ModulePath() {
-    std::wstring path(32768, L'\0');
+    std::wstring path(32768, L'\\0');
     DWORD n = GetModuleFileNameW(g_module, path.data(), static_cast<DWORD>(path.size()));
     if (!n || n >= path.size()) return L"";
     path.resize(n);
@@ -58,7 +59,12 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     constexpr DWORD required = infoBytes + sizeof(pbmType) + sizeof(rawType);
     *needed = required;
     *returned = 0;
-    if (!buffer || cbBuf < required) { SetLastError(ERROR_INSUFFICIENT_BUFFER); LogEnumCall(level, cbBuf, FALSE, ERROR_INSUFFICIENT_BUFFER, *needed, *returned); return FALSE; }
+    if (!buffer || cbBuf < required) {
+        SetLastError(ERROR_INSUFFICIENT_BUFFER);
+        LogEnumCall(level, cbBuf, FALSE, ERROR_INSUFFICIENT_BUFFER, *needed, *returned);
+        return FALSE;
+    }
+
     auto* info = reinterpret_cast<DATATYPES_INFO_1W*>(buffer);
     auto* names = reinterpret_cast<LPWSTR>(buffer + infoBytes);
     memcpy(names, pbmType, sizeof(pbmType));
@@ -73,16 +79,19 @@ BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
 }
 
 extern "C"
-DWORD WINAPI CAPTPBM_GetPrintProcessorCapabilities(LPWSTR datatype, DWORD, LPBYTE, DWORD cbBuf, LPDWORD needed) {
-    if (!needed || !datatype || (lstrcmpiW(datatype, L"CAPTPBM") != 0 && lstrcmpiW(datatype, L"RAW") != 0)) {
+DWORD WINAPI CAPTPBM_GetPrintProcessorCapabilities(LPWSTR datatype, DWORD level,
+    LPBYTE, DWORD, LPDWORD needed) {
+    if (!needed || !datatype || level != 1 ||
+        (lstrcmpiW(datatype, L"CAPTPBM") != 0 && lstrcmpiW(datatype, L"RAW") != 0)) {
         if (needed) *needed = 0;
         return ERROR_INVALID_DATATYPE;
     }
-    // The prototype advertises no optional capabilities, but exports the
-    // documented entry point so the spooler can resolve it by name.
+    // No optional capabilities are implemented. Report a successful empty
+    // capability set instead of ERROR_NOT_SUPPORTED, which can make the spooler
+    // reject an otherwise valid processor during registration.
     *needed = 0;
-    (void)cbBuf;
-    return ERROR_NOT_SUPPORTED;
+    SetLastError(ERROR_SUCCESS);
+    return ERROR_SUCCESS;
 }
 
 extern "C"
@@ -117,7 +126,9 @@ BOOL WINAPI CAPTPBM_ControlPrintProcessor(HANDLE, DWORD) {
 BOOL WINAPI DllMain(HINSTANCE instance, DWORD reason, LPVOID) {
     if (reason == DLL_PROCESS_ATTACH) { g_module = instance; DisableThreadLibraryCalls(instance); }
     return TRUE;
-}extern "C"
+}
+
+extern "C"
 BOOL WINAPI CAPTPBM_PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR documentName) {
     auto* ctx = reinterpret_cast<Context*>(handle);
     if (!ctx || !documentName) {
@@ -155,4 +166,3 @@ BOOL WINAPI CAPTPBM_PrintDocumentOnPrintProcessor(HANDLE handle, LPWSTR document
     }
     return TRUE;
 }
-
