@@ -44,19 +44,6 @@ std::wstring ModulePath() {
 }
 
 extern "C"
-HANDLE WINAPI CAPTPBM_InitializePrintProcessor(PPRINTPROCESSORINIT init) {
-    if (!init || !g_module) {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return nullptr;
-    }
-    // The spooler requires this entry point when loading a print processor.
-    // The current prototype has no per-initialization state; the module handle
-    // is a stable, non-null opaque token for the lifetime of the loaded DLL.
-    SetLastError(ERROR_SUCCESS);
-    return reinterpret_cast<HANDLE>(g_module);
-}
-
-extern "C"
 BOOL WINAPI CAPTPBM_EnumPrintProcessorDatatypes(LPWSTR, LPWSTR, DWORD level,
     LPBYTE buffer, DWORD cbBuf, LPDWORD needed, LPDWORD returned) {
     if (!needed || !returned || level != 1) {
