@@ -1,0 +1,8 @@
+LIBRARY CAPTTEST
+EXPORTS
+  EnumPrintProcessorDatatypes=CAPTTEST_EnumPrintProcessorDatatypes
+  OpenPrintProcessor=CAPTTEST_OpenPrintProcessor
+  PrintDocumentOnPrintProcessor=CAPTTEST_PrintDocumentOnPrintProcessor
+  ClosePrintProcessor=CAPTTEST_ClosePrintProcessor
+  ControlPrintProcessor=CAPTTEST_ControlPrintProcessor
+  GetPrintProcessorCapabilities=CAPTTEST_GetPrintProcessorCapabilities
