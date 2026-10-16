@@ -6,7 +6,15 @@ foreach ($f in @('CAPTPBM.dll','lbp1120-capt-print.exe','lbp1120-text-print.exe'
   if (-not (Test-Path (Join-Path $PSScriptRoot $f))) { throw "Missing package file: $f" }
 }
 if (-not (Get-PrinterDriver -Name 'Generic / Text Only' -ErrorAction SilentlyContinue)) {
-  throw "Windows driver 'Generic / Text Only' is not available. No changes made."
+  Write-Host "Generic / Text Only is not registered. Asking Windows to register its inbox driver..."
+  try {
+    Add-PrinterDriver -Name 'Generic / Text Only' -ErrorAction Stop
+  } catch {
+    throw ('Windows could not register Generic / Text Only. No printer files or queues were changed. Details: ' + $_.Exception.Message)
+  }
+}
+if (-not (Get-PrinterDriver -Name 'Generic / Text Only' -ErrorAction SilentlyContinue)) {
+  throw 'Windows could not register Generic / Text Only. No printer files or queues were changed.'
 }
 Write-Host 'This creates a separate experimental text-only queue. It briefly restarts the Print Spooler.'
 Write-Host 'It does not replace the USB device driver or change other printer queues.'
