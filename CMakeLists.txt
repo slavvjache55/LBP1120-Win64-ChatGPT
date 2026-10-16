@@ -34,6 +34,13 @@ target_compile_definitions(CAPTPBM PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN 
 target_link_libraries(CAPTPBM PRIVATE winspool)
 set_target_properties(CAPTPBM PROPERTIES PREFIX "" OUTPUT_NAME "CAPTPBM")
 
+# Isolated ABI/registration diagnostic; does not print.
+add_library(CAPTTEST SHARED src/capttest_print_processor.cpp src/CAPTTEST.def)
+target_compile_features(CAPTTEST PRIVATE cxx_std_17)
+target_compile_definitions(CAPTTEST PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
+target_link_libraries(CAPTTEST PRIVATE winspool)
+set_target_properties(CAPTTEST PROPERTIES PREFIX "" OUTPUT_NAME "CAPTTEST")
+
 add_executable(lbp1120-text-print src/text_print.cpp)
 target_compile_features(lbp1120-text-print PRIVATE cxx_std_17)
 target_compile_definitions(lbp1120-text-print PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
