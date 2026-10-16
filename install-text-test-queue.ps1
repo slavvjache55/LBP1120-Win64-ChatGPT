@@ -46,7 +46,7 @@ public static class LbpPrintNative {
  public static extern bool ClosePrinter(IntPtr h);
 }
 '@
-if (-not [LbpPrintNative]::AddPrintProcessor($null,'Windows x64','CAPTPBM.dll','CAPTPBM')) {
+if (-not [LbpPrintNative]::AddPrintProcessor($null,'Windows x64',(Join-Path $dir 'CAPTPBM.dll'),'CAPTPBM')) {
   $err = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
   if ($err -ne 3005) { throw "AddPrintProcessor failed (Win32 $err). Files copied, queue not created." }
 }
